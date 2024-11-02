@@ -1,0 +1,65 @@
+version: '3.9'
+services:
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    restart: always
+    container_name: qdrant
+    ports:
+      - 6333:6333
+      - 6334:6334
+    expose:
+      - 6333
+      - 6334
+      - 6335
+    volumes:
+      - ./qdrant_data:/qdrant/storage
+    environment:
+      QDRANT__LOG_LEVEL: "INFO"
+
+  indexer:
+    build: ./indexer
+    volumes:
+      - ${LOCAL_FILES_PATH}:/usr/src/app/local_files
+      - ./indexer:/usr/src/app
+    ports:
+      - 8001:8000
+    environment:
+      - PYTHONPATH=/usr/src
+      - PYTHONUNBUFFERED=TRUE
+      - LOCAL_FILES_PATH=${LOCAL_FILES_PATH}
+      - EMBEDDING_MODEL_ID=${EMBEDDING_MODEL_ID}
+      - EMBEDDING_SIZE=${EMBEDDING_SIZE}
+      - QDRANT_BOOTSTRAP=${QDRANT_BOOTSTRAP}
+      - QDRANT_COLLECTION=${QDRANT_COLLECTION}
+      - START_INDEXING=${START_INDEXING}
+    depends_on:
+      - qdrant
+
+  linker:
+    build: ./linker
+    volumes:
+      - ./linker:/usr/src/app
+    ports:
+      - 8002:8000
+    environment:
+      - PYTHONPATH=/usr/src
+      - PYTHONUNBUFFERED=TRUE
+      - FIRESTORE_COLLECTION_NAME=${FIRESTORE_COLLECTION_NAME}
+      - FIREBASE_KEY_FILE=${FIREBASE_KEY_FILE}
+      - GOOGLE_APPLICATION_CREDENTIALS=${FIREBASE_KEY_FILE}
+      - USER_ID=${USER_ID}
+      - TASKS_COLLECTION=${TASKS_COLLECTION}
+    depends_on:
+      - qdrant
+    
+  nginx-reverse-proxy:
+    image: nginx:latest
+    ports:
+      - 8080:8080
+    volumes:
+      - ./nginx_config.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - qdrant
+      - indexer
+      - linker

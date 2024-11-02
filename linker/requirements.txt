@@ -1,0 +1,6 @@
+httpx
+google-cloud-firestore
+firebase_admin
+asyncio==3.4.3
+fastapi==0.111.0
+uvicorn[standard]
