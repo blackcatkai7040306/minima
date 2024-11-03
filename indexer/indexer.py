@@ -121,4 +121,4 @@ class Indexer:
             return output
         except Exception as e:
             logger.error(f"Failed to search: {e}")
-            return {"result":'Unabe to find anything for the given query'}
+            return {"error":'Unabe to find anything for the given query'}
