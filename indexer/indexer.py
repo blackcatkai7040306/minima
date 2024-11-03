@@ -81,6 +81,8 @@ class Indexer:
     def _process_file(self, loader):
         try:
             documents = loader.load_and_split(self.text_splitter)
+            for doc in documents:
+                doc.metadata['file_path'] = loader.file_path
             logger.info(f"Loaded {len(documents)} documents.")
             uuids = (str(uuid.uuid4()) for _ in range(len(documents)))
             ids = self.document_store.add_documents(documents=documents, ids=list(uuids))
